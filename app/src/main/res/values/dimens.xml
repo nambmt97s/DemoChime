@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="size_20dp">20dp</dimen>
+    <dimen name="size_50dp">50dp</dimen>
+    <dimen name="action_fab_size">45dp</dimen>
+    <dimen name="size_8dp">8dp</dimen>
+</resources>

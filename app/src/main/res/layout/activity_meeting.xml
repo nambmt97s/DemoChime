@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/subViewVideo"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.MeetingActivity">
+
+    <RelativeLayout
+        android:id="@+id/chime_meeting_room_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible" />
+
+
+    <LinearLayout
+        android:id="@+id/functionContainer"
+        android:layout_width="400dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="@dimen/size_20dp"
+        android:baselineAligned="false"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:paddingLeft="@dimen/size_20dp"
+        android:paddingRight="@dimen/size_20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/exit_room"
+                android:layout_width="@dimen/action_fab_size"
+                android:layout_height="@dimen/action_fab_size"
+                android:src="@drawable/ic_end_call"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <RelativeLayout
+                android:layout_width="@dimen/size_50dp"
+                android:layout_height="45dp"
+                android:layout_centerInParent="true">
+
+                <ImageView
+                    android:id="@+id/chat_message_action_fab"
+                    android:layout_width="@dimen/action_fab_size"
+                    android:layout_height="@dimen/action_fab_size"
+                    android:src="@drawable/ic_text_message"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/countNotificationMain"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:background="@drawable/round_notification_count"
+                    android:gravity="center"
+                    android:minWidth="@dimen/size_20dp"
+                    android:text="99+"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/size_8dp"
+                    android:visibility="gone" />
+            </RelativeLayout>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/mute_action_fab"
+                android:layout_width="@dimen/action_fab_size"
+                android:layout_height="@dimen/action_fab_size"
+                android:src="@drawable/mic_enable"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/local_video_action_fab"
+                android:layout_width="@dimen/action_fab_size"
+                android:layout_height="@dimen/action_fab_size"
+                android:src="@drawable/video_enable"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/action_more"
+                android:layout_width="@dimen/action_fab_size"
+                android:layout_height="@dimen/action_fab_size"
+                android:src="@drawable/ic_more"
+                android:visibility="visible" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/localVideo"
+        android:orientation="horizontal"
+        android:layout_width="160dp"
+        android:layout_height="100dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="50dp"
+        android:background="@color/design_default_color_primary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/functionContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

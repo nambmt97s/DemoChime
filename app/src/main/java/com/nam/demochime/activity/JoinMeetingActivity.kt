@@ -128,5 +128,11 @@ class JoinMeetingActivity : AppCompatActivity() {
     fun getSession(): MeetingSession {
         return this.meetingSession
     }
+
+    override fun onPause() {
+        super.onPause()
+        cameraCaptureSource.removeVideoSink(videoPreview!!)
+        cameraCaptureSource.stop()
+    }
 }
 

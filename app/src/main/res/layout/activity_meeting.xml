@@ -13,7 +13,6 @@
         android:layout_height="match_parent"
         android:visibility="visible" />
 
-
     <LinearLayout
         android:id="@+id/functionContainer"
         android:layout_width="400dp"
@@ -119,16 +118,157 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/chat_message_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#F5F7F9"
+        android:clickable="true"
+        android:orientation="vertical"
+        android:visibility="visible">
+
+        <LinearLayout
+            android:id="@+id/headerChatmessage"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/size_60dp"
+            android:background="@color/white"
+            android:orientation="horizontal">
+
+            <RelativeLayout
+                android:layout_width="@dimen/size_40dp"
+                android:layout_height="@dimen/size_40dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="@dimen/size_10dp"
+                android:layout_marginRight="@dimen/size_10dp"
+                android:background="@drawable/background_button_function">
+
+                <ImageButton
+                    android:layout_width="@dimen/size_13dp"
+                    android:layout_height="@dimen/size_20dp"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/ic_arrow_back_blue" />
+
+                <RelativeLayout
+                    android:id="@+id/btnHideChatMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"></RelativeLayout>
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/channel_name_chat_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="@dimen/size_10dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Room"
+                android:textSize="@dimen/size_16dp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/chatMessageContainer"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/size_10dp"
+            android:layout_weight="1">
+
+            <com.nam.demochime.utils.StatefulRecyclerView
+                android:id="@+id/chat_message_recyler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <LinearLayout
+            android:id="@+id/chat_message_sending_text_linear_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:orientation="horizontal"
+            android:visibility="visible">
+
+            <RelativeLayout
+                android:layout_width="@dimen/size_40dp"
+                android:layout_height="@dimen/size_40dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="@dimen/size_5dp"
+                android:background="@drawable/background_button_function"
+                android:visibility="visible">
+
+                <ImageView
+                    android:id="@+id/btnEmoji"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="@dimen/size_10dp"
+                    android:src="@drawable/ic_emoji"></ImageView>
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/btnOpenFileContainer"
+                android:layout_width="@dimen/size_40dp"
+                android:layout_height="@dimen/size_40dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="@dimen/size_5dp"
+                android:layout_marginRight="@dimen/size_5dp"
+                android:background="@drawable/background_button_function"
+                android:visibility="visible">
+
+                <ImageButton
+                    android:layout_width="@dimen/size_20dp"
+                    android:layout_height="@dimen/size_20dp"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/ic_open_file"
+                    android:scaleType="fitCenter" />
+
+                <ImageView
+                    android:id="@+id/btnOpenFile"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"></ImageView>
+            </RelativeLayout>
+
+            <com.vanniktech.emoji.EmojiEditText
+                android:id="@+id/chat_message_edit_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/chat_message_edit_text_background"
+                android:ems="10"
+                android:hint="@string/video_channel_calling_chat_message_enter_your_message"
+                android:imeActionLabel="@string/action_done"
+                android:imeOptions="flagNoFullscreen"
+                android:maxLength="1000"
+                android:maxLines="5"
+                android:minHeight="@dimen/size_50dp"
+                android:padding="@dimen/padding_general_for_edit_text"
+                android:textColor="@color/primary_text"
+                android:textSize="16dp" />
+
+            <ImageView
+                android:id="@+id/chat_message_sending_button"
+                android:layout_width="36dp"
+                android:layout_height="33dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="10dp"
+                android:background="@drawable/ic_off_send_message"
+                android:foreground="?selectableItemBackground"
+                android:paddingLeft="@dimen/size_16dp"
+                android:paddingRight="@dimen/size_16dp"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/localVideo"
         android:orientation="horizontal"
         android:layout_width="160dp"
         android:layout_height="100dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="50dp"
+        android:visibility="visible"
         android:background="@color/design_default_color_primary"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@id/functionContainer"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

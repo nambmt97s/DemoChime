@@ -1,14 +1,16 @@
 package com.nam.demochime.activity
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.*
-import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.DefaultVideoRenderView
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.VideoTileObserver
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.VideoTileState
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.capture.CameraCaptureSource
@@ -31,7 +33,7 @@ import com.nam.demochime.data.VideoCollectionTile
 import com.nam.demochime.utils.GpuVideoProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
+import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.DefaultVideoRenderView as DefaultVideoRenderView1
 
 class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver,
     AudioVideoObserver {
@@ -53,55 +55,85 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
     private lateinit var imgVideoStatus: ImageView
     private lateinit var imgMuteStatus: ImageView
     private lateinit var localVideo: LinearLayout
+    private lateinit var chimeContainer: RelativeLayout
+    private lateinit var view: View
+    private lateinit var view3: View
     private var checkVideoStatus = true
     private var checkMuteStatus = true
     private var attendeeLocal: VideoCollectionTile? = null
     private var layoutParams: RecyclerView.LayoutParams? = null
+    private var compareVideo: VideoCollectionTile? = null
+    private var chimeLocal: com.amazonaws.services.chime.sdk.meetings.audiovideo.video.DefaultVideoRenderView? =
+        null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_meeting)
         configSession()
         initView()
+        setUpFullScreen()
         audioVideo = meetingSession.audioVideo
         subscribeListener()
-//        setUpLocalVideo()
+        setUpLocalVideo()
         setUpChangeVideoStatus()
         setUpChangeMuteStatus()
-        startLocalVideo()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun setUpFullScreen() {
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
+        val currentApiVersion = Build.VERSION.SDK_INT
+        val flags = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+        if (currentApiVersion >= Build.VERSION_CODES.KITKAT) {
+            window.decorView.systemUiVisibility = flags
+            val decorView = window.decorView
+            decorView.setOnSystemUiVisibilityChangeListener {
+                if (it and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
+                    decorView.systemUiVisibility = flags
+                }
+            }
+        }
     }
 
     private fun initView() {
         imgMuteStatus = findViewById(R.id.mute_action_fab)
         imgVideoStatus = findViewById(R.id.local_video_action_fab)
         localVideo = findViewById(R.id.localVideo)
+        chimeContainer = findViewById(R.id.chime_meeting_room_container)
+        layoutInflater
+        view = layoutInflater.inflate(R.layout.chime_view, chimeContainer, false)
+        view3 = layoutInflater.inflate(R.layout.local_video, localVideo, false)
+        chimeContainer.addView(view)
+        localVideo.addView(view3)
+        chimeLocal = view3.findViewById(R.id.local_video)
     }
 
-    private fun initChime(position: Int) {
-        val relativeLayout = findViewById<RelativeLayout>(R.id.chime_meeting_room_container)
-        val layoutInflater = layoutInflater
-        val view = layoutInflater.inflate(R.layout.chime_view, relativeLayout, false)
-        relativeLayout.addView(view)
-        bind(remoteVideoTileStates[position], view.findViewById(R.id.chime))
+    private fun initChime() {
+        if (compareVideo == null) {
+            compareVideo = remoteVideoTileStates[0]
+        }
+        bind(remoteVideoTileStates[1], view.findViewById(R.id.chime))
+        bind(remoteVideoTileStates[0], view3.findViewById(R.id.local_video))
     }
 
-
-    private fun toggleMuteOff() {
-        audioVideo.realtimeLocalUnmute()
-        imgMuteStatus.setImageResource(R.drawable.mic_disable)
+    private fun showLocal() {
+        bind(remoteVideoTileStates[0], view.findViewById(R.id.chime))
     }
-
-    private fun toggleMuteOn() {
-        audioVideo.realtimeLocalMute()
-        imgMuteStatus.setImageResource(R.drawable.mic_enable)
-    }
-
 
     private fun toggleCameraOn() {
+        audioVideo.startLocalVideo(cameraCaptureSource)
         cameraCaptureSource.start()
-        audioVideo.startLocalVideo()
         imgVideoStatus.setImageResource(R.drawable.video_enable)
-        cameraCaptureSource.start()
+        localVideo.visibility = View.VISIBLE
+        chimeLocal!!.visibility = View.VISIBLE
     }
 
 
@@ -109,21 +141,8 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
         cameraCaptureSource.stop()
         audioVideo.stopLocalVideo()
         imgVideoStatus.setImageResource(R.drawable.video_disable)
-        cameraCaptureSource.stop()
-    }
-
-    private fun startLocalVideo() {
-        val layoutInflater = layoutInflater
-        val view = layoutInflater.inflate(R.layout.local_video, localVideo, false)
-        var localVideoRender = view.findViewById<DefaultVideoRenderView>(R.id.local_video)
-        localVideoRender.let {
-            it.logger = logger
-            it.init(eglCoreFactory)
-            cameraCaptureSource.addVideoSink(it)
-            localVideoRender = it
-        }
-        cameraCaptureSource.start()
-        localVideo.addView(view)
+        localVideo.visibility = View.GONE
+        chimeLocal!!.visibility = View.GONE
     }
 
     private fun setUpLocalVideo() {
@@ -141,7 +160,10 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
         audioVideo.startRemoteVideo()
     }
 
-    fun bind(videoCollectionTile: VideoCollectionTile, videoRenderView: DefaultVideoRenderView) {
+    private fun bind(
+        videoCollectionTile: VideoCollectionTile,
+        videoRenderView: DefaultVideoRenderView1
+    ) {
         videoCollectionTile.videoRenderView = videoRenderView
         audioVideo.bindVideoView(videoRenderView, videoCollectionTile.videoTileState.tileId)
     }
@@ -188,6 +210,7 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
         if (remoteVideoTileStates.isNotEmpty()) {
             attendeeLocal = remoteVideoTileStates[0]
         }
+
         if (attendeeBefore == null) {
             remoteVideoTileStates.add(videoCollectionTile)
         } else {
@@ -200,12 +223,13 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
             }
         }
 
-        Log.d(TAG, "yyyy " + remoteVideoTileStates[0].videoTileState.isLocalTile)
+        Log.d(TAG, "yyyy " + tileState.isLocalTile)
         Log.d(TAG, "zzzz " + remoteVideoTileStates.size)
-        initChime(0)
-        if (remoteVideoTileStates.size > 1) {
-            initChime(1)
-            startLocalVideo()
+        if (remoteVideoTileStates.size == 1) {
+            showLocal()
+        }
+        if (remoteVideoTileStates.size == 2) {
+            initChime()
         }
     }
 
@@ -265,7 +289,17 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
         Log.d(TAG, "onAttendeesDropped: ")
     }
 
-    private val mutex = Mutex()
+    private fun toggleMuteOff() {
+        audioVideo.realtimeLocalMute()
+        imgMuteStatus.setImageResource(R.drawable.mic_disable)
+    }
+
+    private fun toggleMuteOn() {
+        audioVideo.realtimeLocalUnmute()
+        imgMuteStatus.setImageResource(R.drawable.mic_enable)
+    }
+
+
     override fun onAttendeesJoined(attendeeInfo: Array<AttendeeInfo>) {
 //        uiScope.launch {
 //            mutex.withLock{

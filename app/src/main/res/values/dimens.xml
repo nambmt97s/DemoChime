@@ -11,4 +11,5 @@
     <dimen name="size_16dp">16dp</dimen>
     <dimen name="size_5dp">5dp</dimen>
     <dimen name="padding_general_for_edit_text">5dp</dimen>
+    <dimen name="size_30dp">30dp</dimen>
 </resources>

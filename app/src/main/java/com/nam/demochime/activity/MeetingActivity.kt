@@ -1,14 +1,19 @@
 package com.nam.demochime.activity
 
+import android.annotation.SuppressLint
+import android.app.Dialog
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.RelativeLayout
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.*
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.VideoTileObserver
@@ -18,6 +23,7 @@ import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.capture.Defaul
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.capture.DefaultSurfaceTextureCaptureSourceFactory
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.gl.DefaultEglCoreFactory
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.gl.EglCoreFactory
+import com.amazonaws.services.chime.sdk.meetings.device.MediaDevice
 import com.amazonaws.services.chime.sdk.meetings.device.MediaDeviceType
 import com.amazonaws.services.chime.sdk.meetings.realtime.RealtimeObserver
 import com.amazonaws.services.chime.sdk.meetings.session.*
@@ -26,17 +32,24 @@ import com.amazonaws.services.chime.sdk.meetings.utils.ModalityType
 import com.amazonaws.services.chime.sdk.meetings.utils.logger.ConsoleLogger
 import com.amazonaws.services.chime.sdk.meetings.utils.logger.LogLevel
 import com.amazonaws.services.chime.sdkdemo.utils.CpuVideoProcessor
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.gson.Gson
 import com.nam.demochime.JoinMeetingResponse
 import com.nam.demochime.R
+import com.nam.demochime.adapter.UserJoinedAdapter
+import com.nam.demochime.customview.SlideCustomView
 import com.nam.demochime.data.VideoCollectionTile
+import com.nam.demochime.utils.AudioDeviceManager
+import com.nam.demochime.utils.Convert
 import com.nam.demochime.utils.GpuVideoProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import com.amazonaws.services.chime.sdk.meetings.audiovideo.video.DefaultVideoRenderView as DefaultVideoRenderView1
 
+@Suppress("DEPRECATION")
 class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver,
-    AudioVideoObserver {
+    AudioVideoObserver, onItemBottomClickListener {
     private lateinit var audioVideo: AudioVideoFacade
 
     private val uiScope = CoroutineScope(Dispatchers.Main)
@@ -46,6 +59,7 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
     private lateinit var cameraCaptureSource: CameraCaptureSource
     lateinit var gpuVideoProcessor: GpuVideoProcessor
     lateinit var cpuVideoProcessor: CpuVideoProcessor
+    private lateinit var audioDeviceManager: AudioDeviceManager
     private val gson = Gson()
     private var meetingId: String? = null
     private val logger = ConsoleLogger(LogLevel.DEBUG)
@@ -56,13 +70,32 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
     private lateinit var imgMuteStatus: ImageView
     private lateinit var localVideo: LinearLayout
     private lateinit var chimeContainer: RelativeLayout
+    private lateinit var swipeCamera: ImageView
+    private lateinit var btnSpeaker: ImageView
+    private lateinit var exit_room: ImageView
     private lateinit var view: View
     private lateinit var view3: View
+    private lateinit var userJoinedView: View
+    private lateinit var rcUsersJoined: RecyclerView
+    private lateinit var slideCustomView: SlideCustomView
+    private lateinit var icMoveView: ImageView
+    private lateinit var audioDevices: List<MediaDevice>
     private var checkVideoStatus = true
     private var checkMuteStatus = true
+    private var isOpenListUser = false
     private var attendeeLocal: VideoCollectionTile? = null
     private var layoutParams: RecyclerView.LayoutParams? = null
     private var compareVideo: VideoCollectionTile? = null
+    private val currentApiVersion = Build.VERSION.SDK_INT
+    private var audioSelectDialog: AudioSelectDialog? = null
+    private var userJoinedAdapter: UserJoinedAdapter? = null
+    private val flags = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            or View.SYSTEM_UI_FLAG_FULLSCREEN)
+
     private var chimeLocal: com.amazonaws.services.chime.sdk.meetings.audiovideo.video.DefaultVideoRenderView? =
         null
 
@@ -73,11 +106,73 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
         initView()
         setUpFullScreen()
         audioVideo = meetingSession.audioVideo
+        audioDeviceManager = AudioDeviceManager(audioVideo)
         subscribeListener()
         setUpLocalVideo()
         setUpChangeVideoStatus()
         setUpChangeMuteStatus()
+        handleSwipeCamera()
+        handleSelectAudioOutput()
+        handleShowCurrentUsers()
     }
+
+    private fun handleShowCurrentUsers() {
+        slideCustomView.alpha = 0.5F
+        userJoinedAdapter = UserJoinedAdapter(remoteVideoTileStates)
+        rcUsersJoined.adapter = userJoinedAdapter
+        icMoveView.setOnClickListener(View.OnClickListener {
+            val displayMetrics = DisplayMetrics()
+            windowManager.defaultDisplay.getMetrics(displayMetrics)
+            val height = displayMetrics.heightPixels
+            val width = displayMetrics.widthPixels
+            val moveViewXSize: Int = icMoveView.getMeasuredWidth()
+            val slideXSize = slideCustomView.measuredWidth
+            Log.d("xxxxxx", slideCustomView.layoutParams.height.toString())
+            Log.d("xxxxxx", slideCustomView.layoutParams.width.toString())
+            if (isOpenListUser) {
+                slideCustomView.animate().x(width.toFloat() - Convert.convertDpToPixel(2f, this))
+                    .duration = 300
+                icMoveView.animate()
+                    .x(width - moveViewXSize.toFloat() - Convert.convertDpToPixel(2f, this))
+                    .duration = 300
+                isOpenListUser = false
+                icMoveView.setImageResource(R.drawable.ic_baseline_keyboard_arrow_right_24)
+            } else {
+                icMoveView.animate().x(width - moveViewXSize - slideXSize.toFloat()).duration = 300
+                slideCustomView.animate().x((width - slideXSize).toFloat()).duration = 300
+                isOpenListUser = true
+                icMoveView.setImageResource(R.drawable.ic_baseline_keyboard_arrow_left_24)
+            }
+        })
+    }
+
+    override fun onClickListener(position: Int) {
+        audioVideo.chooseAudioDevice(audioDevices[position])
+        audioSelectDialog?.dismiss()
+    }
+
+    private fun handleSelectAudioOutput() {
+        audioDevices = audioVideo.listAudioDevices()
+        btnSpeaker.setOnClickListener {
+            audioSelectDialog = AudioSelectDialog(audioDevices, this)
+            audioSelectDialog?.let {
+                it.show(supportFragmentManager, "BottomDialog")
+            }
+        }
+
+        audioDevices.forEach {
+            Log.d(TAG, "handleSelectAudioOutput: ${it.label} : ${it.type}")
+        }
+        Log.d(TAG, "handleSelectAudioOutput: ")
+
+    }
+
+    private fun handleSwipeCamera() {
+        swipeCamera.setOnClickListener {
+            cameraCaptureSource.switchCamera()
+        }
+    }
+
 
     @Suppress("DEPRECATION")
     private fun setUpFullScreen() {
@@ -85,7 +180,6 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         )
-        val currentApiVersion = Build.VERSION.SDK_INT
         val flags = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -108,13 +202,23 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
         imgVideoStatus = findViewById(R.id.local_video_action_fab)
         localVideo = findViewById(R.id.localVideo)
         chimeContainer = findViewById(R.id.chime_meeting_room_container)
-        layoutInflater
+        swipeCamera = findViewById(R.id.swipe_camera)
+        btnSpeaker = findViewById(R.id.btnSpeaker)
+
+        exit_room = findViewById(R.id.exit_room)
         view = layoutInflater.inflate(R.layout.chime_view, chimeContainer, false)
         view3 = layoutInflater.inflate(R.layout.local_video, localVideo, false)
         chimeContainer.addView(view)
         localVideo.addView(view3)
         chimeLocal = view3.findViewById(R.id.local_video)
+        slideCustomView = findViewById(R.id.slideCustomView)
+        icMoveView = findViewById(R.id.icMoveView)
+        userJoinedView = layoutInflater.inflate(R.layout.view_users_joined, null, false)
+        rcUsersJoined = userJoinedView.findViewById(R.id.rcUsersJoined)
+        slideCustomView.addView(userJoinedView)
+        icMoveView.alpha = 0.5f
     }
+
 
     private fun initChime() {
         if (compareVideo == null) {
@@ -230,6 +334,7 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
         }
         if (remoteVideoTileStates.size == 2) {
             initChime()
+            userJoinedAdapter?.notifyDataSetChanged()
         }
     }
 
@@ -269,6 +374,7 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
 
     override fun onVideoTileRemoved(tileState: VideoTileState) {
         Log.d(TAG, "onVideoTileRemoved: ")
+
     }
 
     override fun onVideoTileResumed(tileState: VideoTileState) {
@@ -391,8 +497,8 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
 
     override fun onVideoSessionStarted(sessionStatus: MeetingSessionStatus) {
         Log.d(TAG, "onVideoSessionStarted: ")
-        val audioDevice = meetingSession.audioVideo.listAudioDevices()
-        audioDevice.forEach {
+        val audioDevices = meetingSession.audioVideo.listAudioDevices()
+        audioDevices.forEach {
             Log.d(TAG, "Device type: ${it.type}, label: ${it.label}")
         }
         val myAudioDevice = meetingSession.audioVideo.listAudioDevices().filter {
@@ -409,6 +515,7 @@ class MeetingActivity : AppCompatActivity(), VideoTileObserver, RealtimeObserver
     override fun onVideoSessionStopped(sessionStatus: MeetingSessionStatus) {
         Log.d(TAG, "onVideoSessionStopped: ")
     }
+
 }
 
 data class RosterAttendee(
@@ -419,3 +526,93 @@ data class RosterAttendee(
     val isActiveSpeaker: Boolean = false
 )
 
+@Suppress("DEPRECATION")
+class CustomBottomDialog(context: Context) : BottomSheetDialog(context) {
+
+    override fun show() {
+        window!!.setFlags(
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        )
+        super.show()
+        val uiOptions = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+        this.window!!.decorView.systemUiVisibility = uiOptions
+        window!!.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (window != null && window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            window!!.findViewById<View>(com.google.android.material.R.id.container).fitsSystemWindows =
+                false
+            val decorView = window!!.decorView
+            decorView.systemUiVisibility =
+                decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        }
+    }
+}
+
+@Suppress("DEPRECATION")
+class AudioSelectDialog(
+    private val mediaDevices: List<MediaDevice>,
+    private val onItemBottomClickListener: onItemBottomClickListener
+) :
+    BottomSheetDialogFragment() {
+    private lateinit var speakersLv: ListView
+
+    //    private lateinit var onItemBottomClickListener: onItemBottomClickListener
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.bottom_shet_dialog, container, false)
+        speakersLv = view.findViewById(R.id.rcSpeakers)
+        val adapter = ArrayAdapter<MediaDevice>(
+            requireContext(),
+            android.R.layout.simple_list_item_1,
+            mediaDevices
+        )
+        speakersLv.adapter = adapter
+        speakersLv.setOnItemClickListener { _, _, position, _ ->
+            onItemBottomClickListener.onClickListener(position)
+        }
+        return view
+    }
+
+    override fun show(manager: FragmentManager, tag: String?) {
+        super.show(manager, tag)
+        val flags = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+        dialog?.window?.decorView?.systemUiVisibility = flags
+        this.dialog?.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+    }
+
+    @SuppressLint("RestrictedApi")
+    override fun setupDialog(dialog: Dialog, style: Int) {
+        super.setupDialog(dialog, style)
+        dialog.window?.setFlags(
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        )
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        (view!!.parent.parent.parent as View).fitsSystemWindows = false
+
+    }
+}
+
+interface onItemBottomClickListener {
+    fun onClickListener(position: Int)
+}

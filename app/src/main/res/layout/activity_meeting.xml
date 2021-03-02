@@ -124,7 +124,7 @@
         android:background="#F5F7F9"
         android:clickable="true"
         android:orientation="vertical"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <LinearLayout
             android:id="@+id/headerChatmessage"
@@ -226,22 +226,22 @@
                     android:layout_height="match_parent"></ImageView>
             </RelativeLayout>
 
-            <com.vanniktech.emoji.EmojiEditText
-                android:id="@+id/chat_message_edit_text"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/chat_message_edit_text_background"
-                android:ems="10"
-                android:hint="@string/video_channel_calling_chat_message_enter_your_message"
-                android:imeActionLabel="@string/action_done"
-                android:imeOptions="flagNoFullscreen"
-                android:maxLength="1000"
-                android:maxLines="5"
-                android:minHeight="@dimen/size_50dp"
-                android:padding="@dimen/padding_general_for_edit_text"
-                android:textColor="@color/primary_text"
-                android:textSize="16dp" />
+            <!--            <com.vanniktech.emoji.EmojiEditText-->
+            <!--                android:id="@+id/chat_message_edit_text"-->
+            <!--                android:layout_width="0dp"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:layout_weight="1"-->
+            <!--                android:background="@drawable/chat_message_edit_text_background"-->
+            <!--                android:ems="10"-->
+            <!--                android:hint="@string/video_channel_calling_chat_message_enter_your_message"-->
+            <!--                android:imeActionLabel="@string/action_done"-->
+            <!--                android:imeOptions="flagNoFullscreen"-->
+            <!--                android:maxLength="1000"-->
+            <!--                android:maxLines="5"-->
+            <!--                android:minHeight="@dimen/size_50dp"-->
+            <!--                android:padding="@dimen/padding_general_for_edit_text"-->
+            <!--                android:textColor="@color/primary_text"-->
+            <!--                android:textSize="16dp" />-->
 
             <ImageView
                 android:id="@+id/chat_message_sending_button"
@@ -258,6 +258,26 @@
         </LinearLayout>
     </LinearLayout>
 
+    <ImageView
+        android:id="@+id/swipe_camera"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/ic_switch_camera"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/btnSpeaker"
+        android:layout_width="@dimen/size_30dp"
+        android:layout_height="@dimen/size_30dp"
+        android:layout_marginLeft="@dimen/size_30dp"
+        android:layout_marginTop="120dp"
+        android:src="@drawable/icon_select_output"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/localVideo"
         android:orientation="horizontal"
@@ -270,5 +290,24 @@
         app:layout_constraintBottom_toTopOf="@id/functionContainer"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <ImageView
+        android:id="@+id/icMoveView"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="2dp"
+        android:background="@color/grey"
+        android:src="@drawable/ic_baseline_keyboard_arrow_left_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <com.nam.demochime.customview.SlideCustomView
+        android:id="@+id/slideCustomView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/icMoveView"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
